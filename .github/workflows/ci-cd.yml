@@ -24,7 +24,7 @@ jobs:
                 severity: HIGH,CRITICAL
                 exit-code: 1
             - name: Build Docker Image
-              run: docker build --no-cache -t ${{ secrets.ECR_REPO }}/my-repo:latest .
+              run: docker build -t ${{ secrets.ECR_REPO }}/my-repo:latest .
 
             - name: Scan Document Image with Trivy
               uses: aquasecurity/trivy-action@v0.36.0
@@ -61,8 +61,23 @@ jobs:
 
             - name: Deploy ECS
               uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+
+            - name: Download current task definition
+              run: |
+                aws ecs describe-task-definition \
+                  --task-definition test-task \
+                  --query taskDefinition > task-definition.json
+            - name: Render task definition
+              id: render-task
+              uses: aws-actions/amazon-ecs-render-task-definition@v1
               with:
                 task-definition: task-definition.json
-                service: test-task-service
-                cluster: test-1
+                container-name: resume-container
+                image: ${{ secrets.ECR_REPO }}/my-repo:latest
+            - name: Deploy
+              uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+              with:
+                task-definition: ${{ steps.render-task.outputs.task-definition }}
+                service: resume-service
+                cluster: resume-cluster
                 wait-for-service-stability: true
