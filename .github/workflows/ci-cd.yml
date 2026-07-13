@@ -72,12 +72,13 @@ jobs:
               uses: aws-actions/amazon-ecs-render-task-definition@v1
               with:
                 task-definition: task-definition.json
-                container-name: resume-container
+                container-name: test-container
                 image: ${{ secrets.ECR_REPO }}/my-repo:latest
-            - name: Deploy
+
+            - name: Deploy ECS
               uses: aws-actions/amazon-ecs-deploy-task-definition@v2
               with:
                 task-definition: ${{ steps.render-task.outputs.task-definition }}
-                service: resume-service
-                cluster: resume-cluster
+                service: test-task-service
+                cluster: test-1
                 wait-for-service-stability: true
